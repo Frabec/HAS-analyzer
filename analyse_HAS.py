@@ -17,20 +17,20 @@ def browse_button():
 #get in a folder open all the files and stores them in an array, using a double array format
 def form_folder_to_arrays(path, wavelength):
     data_storage= []
-    data_storage_counter=0
     for file_names in os.listdir(path):
         #the files containing wavefront information are in wft extension
         if not str.endswith(file_names, ".wft"):
             continue
         f= open(path+'\\'+file_names,'r')
-        data_storage.append([])
+        new_image=[]
         for lines in f:
             raw=(lines.split('\t'))
             #replace NaN by 0 and convert to float
-            filtered=list(map(lambda x: wavelength*float(x) if not("NaN" in x) else 0., raw))
+            modified=list(map(lambda x: wavelength*float(x) if not("NaN" in x) else 0., raw))
             #if list is not empty
-            data_storage[data_storage_counter].append(filtered)
-        data_storage_counter=data_storage_counter+1
+            new_image.append(modified)
+        data_storage.append(new_image)
+        
     
     return data_storage
 
