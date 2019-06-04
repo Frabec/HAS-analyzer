@@ -44,8 +44,19 @@ def calculate_RMS_images(data):
     return RMS_images
 
 def calculate_RMS_pixel_by_pixel(data):
-    RMS_pixels=np.std(data, axis=0)
-    RMS_pixels=[list(filter(lambda x: x!=0., row)) for row in RMS_pixels]
+    RMS_pixels=[]
+    for i,_ in enumerate(data[0]):
+        row=[]
+        for j,_ in enumerate(data[0][i]):
+            hasNaN=False
+            for _,img in enumerate(data):
+                if img[i][j] ==0:
+                    hasNaN=True
+                    break
+            if not hasNaN:
+                row.append(np.std([data[nber][i][j] for nber in range(len(data))]))
+        if row:
+            RMS_pixels.append(row)
     return RMS_pixels
 
 def calculate_everything(path_to_folder, wavelength_str):
