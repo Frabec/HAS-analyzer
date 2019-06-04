@@ -68,7 +68,6 @@ def calculate_everything(path_to_folder, wavelength_str):
     global RMS_RMS
     RMS_RMS.set(np.std(RMS_images))
     RMS_pixel_by_pixel=calculate_RMS_pixel_by_pixel(data)
-    print(RMS_pixel_by_pixel)
     global RMS_pixels
     RMS_pixels.set(np.mean([pixel for row in RMS_pixel_by_pixel for pixel in row]))
 
