@@ -6,9 +6,14 @@ import numpy as np
 
 def browse_button():
     global folder_path
+    global button3
     filename=filedialog.askdirectory()
     folder_path.set(filename)
-
+    #activate the Do it button
+    if len(folder_path.get())>0:
+        button3.config(state="normal")
+    else: 
+        button3.config(state="disabled")
 #get in a folder open all the files and stores them in an array, using a double array format
 def form_folder_to_arrays(path, wavelength):
     data_storage= []
@@ -67,7 +72,7 @@ lbl1 = Label(master=root,textvariable=folder_path)
 lbl1.grid(row=0, column=2)
 button2 = Button(text="Browse folder", command=browse_button)
 button2.grid(row=0, column=1)
-button3 = Button(text="Do it", command=lambda: calculate_everything(folder_path.get(), Wavelength.get()))
+button3 = Button(text="Do it", state="disabled",command=lambda: calculate_everything(folder_path.get(), Wavelength.get()))
 button3.grid(row=0, column=0)
 #titles
 lbl_mean_rms_global_title = Label(master=root, text="Mean of the RMS of the images(nm): ")
