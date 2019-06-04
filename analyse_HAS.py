@@ -29,15 +29,19 @@ def form_folder_to_arrays(path, wavelength):
             modified=list(map(lambda x: wavelength*float(x) if not("NaN" in x) else 0., raw))
             #if list is not empty
             new_image.append(modified)
+        #Now data_storage contains a list of images of same xlength and ylength, but we have converted the NaN to zeros
+
         data_storage.append(new_image)
         
-    
     return data_storage
 
 def calculate_RMS_images(data): 
     RMS_images=[None]*len(data)
     for i,image in enumerate(data):
-        RMS_images[i]=np.std(image)
+        #We delete the 0 because they were NaN
+        filtered_image=[list(filter(lambda x: x!=0., row)) for row in image]
+        print(filtered_image)
+        RMS_images[i]=np.std([pixel for row in filtered_image for pixel in row])
     return RMS_images
 
 def calculate_RMS_pixel_by_pixel(data):
