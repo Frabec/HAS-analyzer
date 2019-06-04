@@ -40,16 +40,13 @@ def calculate_RMS_images(data):
     for i,image in enumerate(data):
         #We delete the 0 because they were NaN
         filtered_image=[list(filter(lambda x: x!=0., row)) for row in image]
-        print(filtered_image)
         RMS_images[i]=np.std([pixel for row in filtered_image for pixel in row])
     return RMS_images
 
 def calculate_RMS_pixel_by_pixel(data):
     RMS_pixels=np.std(data, axis=0)
+    RMS_pixels=[list(filter(lambda x: x!=0., row)) for row in RMS_pixels]
     return RMS_pixels
-
-        
-
 
 def calculate_everything(path_to_folder, wavelength_str):
     wavelength=int(wavelength_str)
@@ -60,8 +57,10 @@ def calculate_everything(path_to_folder, wavelength_str):
     global RMS_RMS
     RMS_RMS.set(np.std(RMS_images))
     RMS_pixel_by_pixel=calculate_RMS_pixel_by_pixel(data)
+    print(RMS_pixel_by_pixel)
     global RMS_pixels
-    RMS_pixels.set(np.mean(RMS_pixel_by_pixel))
+    RMS_pixels.set(np.mean([pixel for row in RMS_pixel_by_pixel for pixel in row]))
+
 
 root = Tk()
 root.title("HAS Analyzer")
