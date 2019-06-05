@@ -2,6 +2,10 @@ from tkinter import *
 from tkinter import filedialog
 import os as os
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib import rcParams
 
 
 def browse_button():
@@ -14,6 +18,7 @@ def browse_button():
         button3.config(state="normal")
     else: 
         button3.config(state="disabled")
+        button4.config(state="disabled")
 #get in a folder open all the files and stores them in an array, using a double array format
 def form_folder_to_arrays(path, wavelength):
     data_storage= []
@@ -45,8 +50,11 @@ def calculate_RMS_images(data):
 
 def calculate_RMS_pixel_by_pixel(data):
     RMS_pixels=[]
+    global RMS_map
+    RMS_map=[]
     for i,_ in enumerate(data[0]):
         row=[]
+        row_for_map=[]
         for j,_ in enumerate(data[0][i]):
             hasNaN=False
             for _,img in enumerate(data):
@@ -54,12 +62,18 @@ def calculate_RMS_pixel_by_pixel(data):
                     hasNaN=True
                     break
             if not hasNaN:
-                row.append(np.std([data[nber][i][j] for nber in range(len(data))]))
+                row.append(np.std([data[nber][i][j] for nber in range(len(data))], dtype=float))
+                row_for_map.append(np.std([data[nber][i][j] for nber in range(len(data))], dtype=float))
+            else:
+                row_for_map.append(0.)
         if row:
             RMS_pixels.append(row)
+        RMS_map.append(row_for_map)
     return RMS_pixels
 
 def calculate_everything(path_to_folder, wavelength_str):
+    #Reset RMS map
+    global RMS_map
     wavelength=int(wavelength_str)
     data=form_folder_to_arrays(path_to_folder, wavelength)
     RMS_images=calculate_RMS_images(data)
@@ -68,25 +82,56 @@ def calculate_everything(path_to_folder, wavelength_str):
     global RMS_RMS
     RMS_RMS.set(np.std(RMS_images))
     RMS_pixel_by_pixel=calculate_RMS_pixel_by_pixel(data)
+    global button4
+    button4.config(state="normal")
     global RMS_pixels
     RMS_pixels.set(np.mean([pixel for row in RMS_pixel_by_pixel for pixel in row]))
 
+#plot image map of RMS
+def plotRMS():
+    global RMS_map
+    fig, ax = plt.subplots()
+    im= ax.imshow(RMS_map, interpolation='bilinear', cmap=cm.YlOrRd, origin='lower', extent=[-2,2,-2,2])
+    cbar= fig.colorbar(im, label="RMS in nm")
+    ###increase label size of colorbar
+    ax = cbar.ax
+    text = ax.yaxis.label
+    font = matplotlib.font_manager.FontProperties(size=16)
+    text.set_font_properties(font)
+    ###
+    plt.title("RMS map pixel by pixel", fontdict={'fontsize' : 22}, pad=20)
+    #Add padding between title and plot
+    plt.show()
 
 root = Tk()
 root.title("HAS Analyzer")
 root.geometry("600x300")
+#######################################
+###           Global vars           ###
+#######################################
 folder_path = StringVar()
 mean_RMS= DoubleVar()
 RMS_RMS = DoubleVar()
 RMS_pixels =DoubleVar()
 Wavelength = DoubleVar()
 Wavelength.set(800.0)
+#store RMS map
+RMS_map=[]
+########################################
+
+
+########################################
+###               GUI                ###
+########################################
+
 lbl1 = Label(master=root,textvariable=folder_path)
-lbl1.grid(row=0, column=2)
+lbl1.grid(row=0, column=3)
 button2 = Button(text="Browse folder", command=browse_button)
-button2.grid(row=0, column=1)
+button2.grid(row=0, column=2)
 button3 = Button(text="Do it", state="disabled",command=lambda: calculate_everything(folder_path.get(), Wavelength.get()))
 button3.grid(row=0, column=0)
+button4 = Button(text="Show map of wavefront", state="disabled", command=plotRMS)
+button4.grid(row=0, column=1)
 #titles
 lbl_mean_rms_global_title = Label(master=root, text="Mean of the RMS of the images(nm): ")
 lbl_mean_rms_global_title.grid(row=2, column=0, sticky="W",pady=(50,10))
@@ -106,4 +151,5 @@ lbl_rms_rms_global_value.grid(row=3, column=1, sticky="W",pady=10)
 lbl_rms_pixel_by_pixel_value = Label(master=root, textvariable=RMS_pixels)
 lbl_rms_pixel_by_pixel_value.grid(row=4, column=1, sticky="W",pady=10)
 
+##########################################
 mainloop()
