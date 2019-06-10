@@ -109,7 +109,7 @@ def calculate_everything_recursive(path_to_folder):
     RMS_pixels.set(None)
     write_file= open(path_to_folder+"/data.txt","w")
     write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
-    for root,_,files in os.walk(path_to_folder, topdown="false"):
+    for root,_,_ in os.walk(path_to_folder, topdown="false"):
         #if there are files
             data=form_folder_to_arrays(root)
             if data:
@@ -118,8 +118,9 @@ def calculate_everything_recursive(path_to_folder):
                 local_RMS_RMS=np.std(RMS_images)
                 local_RMS_pixels_list=calculate_RMS_pixel_by_pixel(data)
                 local_RMS_pixels=(np.mean([pixel for row in local_RMS_pixels_list for pixel in row]))
-                write_file.write(root+"\n")
+                write_file.write(root[len(path_to_folder):]+"\n")
                 write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
+            
     write_file.close()
 
 #plot image map of RMS
@@ -180,7 +181,7 @@ lbl_rms_rms_global_value = Label(master=root, textvariable=RMS_RMS)
 lbl_rms_rms_global_value.grid(row=3, column=1, sticky="W",pady=10)
 lbl_rms_pixel_by_pixel_value = Label(master=root, textvariable=RMS_pixels)
 lbl_rms_pixel_by_pixel_value.grid(row=4, column=1, sticky="W",pady=10)
-c= Checkbutton(master=root, text= "Browse folder recursevily (output is a text file)", variable=Recursive)
+c= Checkbutton(master=root, text= "Browse folder recursively (output is a text file)", variable=Recursive)
 c.grid(row=2, column= 1, sticky="W", pady=(0,30))
 ##########################################
 mainloop()
