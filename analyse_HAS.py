@@ -5,8 +5,16 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import re
 from matplotlib import rcParams
 
+class Scan: 
+    def __init__(self):
+        self.all= "NaN"
+        self.filtered2= "NaN"
+        self.filtered3= "NaN"
+        self.tilt= "NaN"
+        self.focus= "NaN"
 
 def browse_button():
     global folder_path
@@ -107,19 +115,40 @@ def calculate_everything_recursive(path_to_folder):
     RMS_RMS.set(None)
     global RMS_pixels
     RMS_pixels.set(None)
-    write_file= open(path_to_folder+"/data.txt","w")
-    write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
+    #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
+    data_dict={}
+    write_file= open(path_to_folder+"/data_formated.txt","w")
+    write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_focus\n")
     for root,_,_ in os.walk(path_to_folder, topdown="false"):
         #if there are files
             data=form_folder_to_arrays(root)
             if data:
+                #store into the dictionnary the data point
+                path_list=re.split("[\\\\,/]+",root)
+                m=re.search("[0-9]+", path_list[-2])
+                scan_number=m.group(0)
                 RMS_images=calculate_RMS_images(data)
-                local_mean_RMS= np.mean(RMS_images)
-                local_RMS_RMS=np.std(RMS_images)
-                local_RMS_pixels_list=calculate_RMS_pixel_by_pixel(data)
-                local_RMS_pixels=(np.mean([pixel for row in local_RMS_pixels_list for pixel in row]))
-                write_file.write(root[len(path_to_folder):]+"\n")
-                write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
+                local_RMS_RMS=str(np.std(RMS_images))
+                if scan_number not in data_dict:
+                    data_dict[scan_number]=Scan()
+                if path_list[-1]=="analysis":
+                    data_dict[scan_number].all=local_RMS_RMS
+                elif path_list[-1]=="analysis_filtered2":
+                    data_dict[scan_number].filtered2=local_RMS_RMS
+                elif path_list[-1]=="analysis_filtered3":
+                    data_dict[scan_number].filtered3=local_RMS_RMS
+                elif path_list[-1]=="analysis_tilt":
+                    data_dict[scan_number].tilt=local_RMS_RMS
+                elif path_list[-1]=="analysis_focus":
+                    data_dict[scan_number].focus=local_RMS_RMS
+                else:
+                    print("Warning scan "+scan_number+ " misnammed folder!!!!")
+            
+    #Now write everything into the text file
+    #Format : 
+    #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
+    for number, scan in data_dict.items():
+        write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
             
     write_file.close()
 
