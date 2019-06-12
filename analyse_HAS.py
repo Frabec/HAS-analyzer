@@ -82,46 +82,50 @@ def calculate_RMS_pixel_by_pixel(data):
     return RMS_pixels
 
 def calculate_everything(path_to_folder, mode):
-    if mode.get()==1:
-        calculate_everything_recursive_no_structure(path_to_folder)
-    elif mode.get()==2:
-        calculate_everything_recursive_structure(path_to_folder)
-    else: 
-        calculate_everything_single_file(path_to_folder)
-
-def  calculate_everything_single_file(path_to_folder):
-        #Reset RMS map
-        global RMS_map
+    global RMS_map
+    global mean_RMS
+    global RMS_RMS
+    global button4
+    global RMS_pixels
+    #single file
+    if mode==0:
         data=form_folder_to_arrays(path_to_folder)
         RMS_images=calculate_RMS_images(data)
-        global mean_RMS
         mean_RMS.set(np.mean(RMS_images))
-        global RMS_RMS
         RMS_RMS.set(np.std(RMS_images))
         RMS_pixel_by_pixel=calculate_RMS_pixel_by_pixel(data)
-        global button4
         button4.config(state="normal")
-        global RMS_pixels
         RMS_pixels.set(np.mean([pixel for row in RMS_pixel_by_pixel for pixel in row]))
-
-
-def calculate_everything_recursive_structure(path_to_folder):
-    print("path_to_folder: " + path_to_folder)
+        return
+    #browse without structure
     #There is no mean wavefront to plot
-    global button4
-    button4.config(state="normal")
+    button4.config(state="disabled")
     #Don't show any data it is only for single files
-    global mean_RMS
     mean_RMS.set(None)
-    global RMS_RMS
     RMS_RMS.set(None)
-    global RMS_pixels
     RMS_pixels.set(None)
-    #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
-    data_dict={}
-    write_file= open(path_to_folder+"/data_formated.txt","w")
-    write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_focus\n")
-    for root,_,_ in os.walk(path_to_folder, topdown="false"):
+    if mode==1:
+        write_file= open(path_to_folder+"/data.txt","w")
+        write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
+        for root,_,_ in os.walk(path_to_folder, topdown="false"):
+            #if there are files
+            data=form_folder_to_arrays(root)
+            if data:
+                RMS_images=calculate_RMS_images(data)
+                local_mean_RMS= np.mean(RMS_images)
+                local_RMS_RMS=np.std(RMS_images)
+                local_RMS_pixels_list=calculate_RMS_pixel_by_pixel(data)
+                local_RMS_pixels=(np.mean([pixel for row in local_RMS_pixels_list for pixel in row]))
+                write_file.write(root[len(path_to_folder):]+"\n")
+                write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
+        write_file.close()
+    #Browse with order
+    else: 
+         #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
+        data_dict={}
+        write_file= open(path_to_folder+"/data_formated.txt","w")
+        write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_focus\n")
+        for root,_,_ in os.walk(path_to_folder, topdown="false"):
         #if there are files
             data=form_folder_to_arrays(root)
             if data:
@@ -146,41 +150,13 @@ def calculate_everything_recursive_structure(path_to_folder):
                 else:
                     print("Warning scan "+scan_number+ " misnammed folder!!!!")
 
-    #Now write everything into the text file
-    #Format : 
-    #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
-    for number, scan in data_dict.items():
-        write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
-            
-    write_file.close()
-
-def calculate_everything_recursive_no_structure(path_to_folder):
-    print("path_to_folder: " + path_to_folder)
-    #There is no mean wavefront to plot
-    global button4
-    button4.config(state="normal")
-    #Don't show any data it is only for single files
-    global mean_RMS
-    mean_RMS.set(None)
-    global RMS_RMS
-    RMS_RMS.set(None)
-    global RMS_pixels
-    RMS_pixels.set(None)
-    write_file= open(path_to_folder+"/data.txt","w")
-    write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
-    for root,_,_ in os.walk(path_to_folder, topdown="false"):
-        #if there are files
-            data=form_folder_to_arrays(root)
-            if data:
-                RMS_images=calculate_RMS_images(data)
-                local_mean_RMS= np.mean(RMS_images)
-                local_RMS_RMS=np.std(RMS_images)
-                local_RMS_pixels_list=calculate_RMS_pixel_by_pixel(data)
-                local_RMS_pixels=(np.mean([pixel for row in local_RMS_pixels_list for pixel in row]))
-                write_file.write(root[len(path_to_folder):]+"\n")
-                write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
-            
-    write_file.close()
+        #Now write everything into the text file
+        #Format : 
+        #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
+        for number, scan in data_dict.items():
+            write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
+                
+        write_file.close()
 
 #plot image map of RMS
 def plotRMS():
@@ -218,11 +194,11 @@ RMS_map=[]
 ########################################
 ###               GUI                ###
 ########################################
-modes_of_analyzing = ["Single folder", "Browse recursively and store data in txt file", "Browse recursively respecting the scan file arborescence (see documentation) and store data in .txt file"]
+modes_of_analyzing = ["Single folder", "Browse recursively and store data in txt file", "Browse recursively respecting the scan file arborescence\n(see documentation) and store data in .txt file"]
 lbl1 = Label(master=root,textvariable=folder_path)
-lbl1.grid(row=0, column=3)
+lbl1.grid(row=0, column=4, sticky="W")
 button2 = Button(text="Browse folder", command=browse_button)
-button2.grid(row=0, column=2)
+button2.grid(row=0, column=3, sticky="W")
 button3 = Button(text="Do it", state="disabled",command=lambda: calculate_everything(folder_path.get(), analyzing_mode))
 button3.grid(row=0, column=0)
 button4 = Button(text="Show map of wavefront", state="disabled", command=plotRMS)
@@ -242,7 +218,6 @@ lbl_rms_rms_global_value.grid(row=3, column=1, sticky="W",pady=10)
 lbl_rms_pixel_by_pixel_value = Label(master=root, textvariable=RMS_pixels)
 lbl_rms_pixel_by_pixel_value.grid(row=4, column=1, sticky="W",pady=10)
 for val, text_button in enumerate(modes_of_analyzing):
-    radio=Radiobutton(master=root, text=text_button, variable=analyzing_mode, value=val)
-    radio.grid=(row=2, column=val, sticky="W", pady=(0,50))
+    Radiobutton(master=root, text=text_button, variable=analyzing_mode, value=val).grid(row=2, column=val, sticky="W", pady=(10,50))
 ##########################################
 mainloop()
