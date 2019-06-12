@@ -131,19 +131,19 @@ def calculate_everything_recursive(path_to_folder):
                 local_RMS_RMS=str(np.std(RMS_images))
                 if scan_number not in data_dict:
                     data_dict[scan_number]=Scan()
-                if path_list[-1]=="analysis":
+                if path_list[-1]=="all":
                     data_dict[scan_number].all=local_RMS_RMS
-                elif path_list[-1]=="analysis_filtered2":
+                elif path_list[-1]=="filtered2":
                     data_dict[scan_number].filtered2=local_RMS_RMS
-                elif path_list[-1]=="analysis_filtered3":
+                elif path_list[-1]=="filtered3":
                     data_dict[scan_number].filtered3=local_RMS_RMS
-                elif path_list[-1]=="analysis_tilt":
+                elif path_list[-1]=="tilt":
                     data_dict[scan_number].tilt=local_RMS_RMS
-                elif path_list[-1]=="analysis_focus":
+                elif path_list[-1]=="focus":
                     data_dict[scan_number].focus=local_RMS_RMS
                 else:
                     print("Warning scan "+scan_number+ " misnammed folder!!!!")
-            
+
     #Now write everything into the text file
     #Format : 
     #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
