@@ -83,7 +83,7 @@ def calculate_RMS_pixel_by_pixel(data):
     return RMS_pixels
 
 def do_it_action(path_to_folder, mode):
-    thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode))
+    thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode.get()))
     thread1.start()
 
 def calculate_everything(path_to_folder, mode):
@@ -93,6 +93,8 @@ def calculate_everything(path_to_folder, mode):
     global button4
     global RMS_pixels
     #single file
+    print(type(mode))
+    print(mode)
     if mode==0:
         data=form_folder_to_arrays(path_to_folder)
         RMS_images=calculate_RMS_images(data)
@@ -125,7 +127,7 @@ def calculate_everything(path_to_folder, mode):
                 write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
         write_file.close()
     #Browse with order
-    else: 
+    elif mode==2: 
          #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
         data_dict={}
         write_file= open(path_to_folder+"/data_formated.txt","w")
@@ -162,7 +164,8 @@ def calculate_everything(path_to_folder, mode):
             write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
                 
         write_file.close()
-
+    else : 
+        print("Non recongnized analysis mode")
 #plot image map of RMS
 def plotRMS():
     global RMS_map
@@ -179,9 +182,11 @@ def plotRMS():
     #Add padding between title and plot
     plt.show()
 
+############################################################################################################
+#Start
 root = Tk()
 root.title("HAS Analyzer")
-root.geometry("1000x300")
+root.geometry("{}x{}".format(900,350))
 #######################################
 ###           Global vars           ###
 #######################################
@@ -190,39 +195,62 @@ mean_RMS= DoubleVar()
 RMS_RMS = DoubleVar()
 RMS_pixels =DoubleVar()
 analyzing_mode= IntVar()
+analyzing_mode.set(0)
 #store RMS map
 RMS_map=[]
-
-########################################
-
-
 ########################################
 ###               GUI                ###
 ########################################
-modes_of_analyzing = ["Single folder", "Browse recursively and store data in txt file", "Browse recursively respecting the scan file arborescence\n(see documentation) and store data in .txt file"]
-lbl1 = Label(master=root,textvariable=folder_path)
-lbl1.grid(row=0, column=4, sticky="W")
-button2 = Button(text="Browse folder", command=browse_button)
-button2.grid(row=0, column=3, sticky="W")
-button3 = Button(text="Do it", state="disabled",command=lambda: do_it_action(folder_path.get(), analyzing_mode))
-button3.grid(row=0, column=0)
-button4 = Button(text="Show map of wavefront", state="disabled", command=plotRMS)
-button4.grid(row=0, column=1)
-#titles
-lbl_mean_rms_global_title = Label(master=root, text="Mean of the RMS of the images(nm): ")
-lbl_mean_rms_global_title.grid(row=2, column=0, sticky="W",pady=(50,10))
-lbl_rms_rms_global_title = Label(master=root, text="RMS of the RMS of the images(nm): ")
-lbl_rms_rms_global_title.grid(row=3, column=0, sticky="W",pady=10)
-lbl_rms_pixel_by_pixel_title = Label(master=root, text="Mean of RMS pixel by pixel(nm): ")
-lbl_rms_pixel_by_pixel_title.grid(row=4, column=0, sticky="W",pady=10)
-#values
-lbl_mean_rms_global_value = Label(master=root, textvariable=mean_RMS)
-lbl_mean_rms_global_value.grid(row=2, column=1, sticky="W",pady=(50,10))
-lbl_rms_rms_global_value = Label(master=root, textvariable=RMS_RMS)
-lbl_rms_rms_global_value.grid(row=3, column=1, sticky="W",pady=10)
-lbl_rms_pixel_by_pixel_value = Label(master=root, textvariable=RMS_pixels)
-lbl_rms_pixel_by_pixel_value.grid(row=4, column=1, sticky="W",pady=10)
-for val, text_button in enumerate(modes_of_analyzing):
-    Radiobutton(master=root, text=text_button, variable=analyzing_mode, value=val).grid(row=2, column=val, sticky="W", pady=(10,50))
-##########################################
+
+################Frames##################
+root.grid_rowconfigure(0,weight=1)
+root.grid_rowconfigure(1,weight=1)
+root.grid_columnconfigure(0,weight=1)
+root.grid_columnconfigure(1,weight=1)
+top_frame= Frame(master=root, width=800, height=30)
+left_frame=Frame(master=root, width=300, height=300)
+right_frame=Frame(master=root, width=500, height=300)
+
+top_frame.grid(row=0,columnspan=2,sticky="nsew")
+left_frame.grid(row=1, column=0, sticky="w")
+right_frame.grid(row=1, column=1,stick="w")
+top_frame.pack_propagate(False)
+left_frame.pack_propagate(False)
+right_frame.grid_propagate(False)
+#Packing in top frame
+button3 = Button(top_frame, text="Do it", state="disabled",command=lambda: do_it_action(folder_path.get(), analyzing_mode))
+button3.pack(side=LEFT, fill=Y, padx=(0,50))
+button2 = Button(top_frame, text="Browse folder", command=browse_button)
+button2.pack(side=LEFT, fill=Y)
+lbl1 = Label(top_frame,textvariable=folder_path)
+lbl1.pack(side=LEFT)
+
+#Packing in left frame
+listbox_lbl=Label(left_frame, text="Select analysis mode")
+listbox_lbl.pack(fill=X, pady=(50,0))
+modes_of_analyzing = ["Single folder", "Browse recursively", "Browse recursively respecting the scan file arborescence", "Make, file for masterlog"]
+for val, modes in enumerate(modes_of_analyzing):
+    Radiobutton(left_frame, text=modes, variable=analyzing_mode, value=val, indicatoron=0).pack(fill=X)
+
+
+    #button
+button4 = Button(master=right_frame,text="Show map of wavefront", state="disabled", command=plotRMS)
+button4.grid(row=0, column=0,pady=(50,0),padx=(10,0))
+    #titles
+lbl_mean_rms_global_title = Label(master=right_frame, text="Mean of the RMS of the images(nm): ")
+lbl_mean_rms_global_title.grid(row=1, column=0, sticky="e",pady=10,padx=(50,0))
+lbl_rms_rms_global_title = Label(master=right_frame, text="RMS of the RMS of the images(nm): ")
+lbl_rms_rms_global_title.grid(row=2, column=0, sticky="e",pady=10,padx=(50,0))
+lbl_rms_pixel_by_pixel_title = Label(master=right_frame, text="Mean of RMS pixel by pixel(nm): ")
+lbl_rms_pixel_by_pixel_title.grid(row=3, column=0, sticky="e",pady=10,padx=(50,0))
+    #values
+lbl_mean_rms_global_value = Label(master=right_frame, textvariable=mean_RMS)
+lbl_mean_rms_global_value.grid(row=1, column=1, sticky="e",pady=10)
+lbl_rms_rms_global_value = Label(master=right_frame, textvariable=RMS_RMS)
+lbl_rms_rms_global_value.grid(row=2, column=1, sticky="e",pady=10)
+lbl_rms_pixel_by_pixel_value = Label(master=right_frame, textvariable=RMS_pixels)
+lbl_rms_pixel_by_pixel_value.grid(row=3, column=1, sticky="e",pady=10)
+
+#########################################
+
 mainloop()
