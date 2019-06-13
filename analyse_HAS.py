@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import re
 from matplotlib import rcParams
+import threading as thr
 
 class Scan: 
     def __init__(self):
@@ -81,6 +82,10 @@ def calculate_RMS_pixel_by_pixel(data):
         RMS_map.append(row_for_map)
     return RMS_pixels
 
+def do_it_action(path_to_folder, mode):
+    thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode))
+    thread1.start()
+
 def calculate_everything(path_to_folder, mode):
     global RMS_map
     global mean_RMS
@@ -131,7 +136,7 @@ def calculate_everything(path_to_folder, mode):
             if data:
                 #store into the dictionnary the data point
                 path_list=re.split("[\\\\,/]+",root)
-                m=re.search("[0-9]+", path_list[-2])
+                m=re.search("[0-9]+", path_list[-3])
                 scan_number=m.group(0)
                 RMS_images=calculate_RMS_images(data)
                 local_RMS_RMS=str(np.std(RMS_images))
@@ -176,7 +181,7 @@ def plotRMS():
 
 root = Tk()
 root.title("HAS Analyzer")
-root.geometry("800x300")
+root.geometry("1000x300")
 #######################################
 ###           Global vars           ###
 #######################################
@@ -199,7 +204,7 @@ lbl1 = Label(master=root,textvariable=folder_path)
 lbl1.grid(row=0, column=4, sticky="W")
 button2 = Button(text="Browse folder", command=browse_button)
 button2.grid(row=0, column=3, sticky="W")
-button3 = Button(text="Do it", state="disabled",command=lambda: calculate_everything(folder_path.get(), analyzing_mode))
+button3 = Button(text="Do it", state="disabled",command=lambda: do_it_action(folder_path.get(), analyzing_mode))
 button3.grid(row=0, column=0)
 button4 = Button(text="Show map of wavefront", state="disabled", command=plotRMS)
 button4.grid(row=0, column=1)
