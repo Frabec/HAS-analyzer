@@ -29,8 +29,8 @@ def browse_button():
     else: 
         button3.config(state="disabled")
         button4.config(state="disabled")
-#get in a folder open all the files and stores them in an array, using a double array format
-def form_folder_to_arrays(path):
+#get in a folder open all the wavefront (.wft) files and stores them in an array, using a double array format
+def from_folder_to_arrays(path):
     data_storage= []
     for file_names in os.listdir(path):
         #the files containing wavefront information are in wft extension
@@ -51,6 +51,19 @@ def form_folder_to_arrays(path):
         f.close()
         
     return data_storage
+
+#get in a folder open all the zernike files (.zrn) and stores the first 3 coeffs of each shot, using a double array format
+def from_folder_to_arrays_zernike(path):
+    storage=[]
+    for file_name in os.listdir(path): 
+        if not str.endswith(file_name, ".zrn"):
+            continue
+        f=open(os.path.join(path, file_name), 'r')
+        raw=f.readline()
+        split=raw.split('\t')
+        storage.append(split[0:3])
+        f.close()
+    return storage
 
 def calculate_RMS_images(data): 
     RMS_images=[None]*len(data)
@@ -100,7 +113,7 @@ def calculate_everything(path_to_folder, mode):
     global RMS_pixels
     #single file
     if mode==0:
-        data=form_folder_to_arrays(path_to_folder)
+        data=from_folder_to_arrays(path_to_folder)
         RMS_images=calculate_RMS_images(data)
         mean_RMS.set(np.mean(RMS_images))
         RMS_RMS.set(np.std(RMS_images))
@@ -120,7 +133,7 @@ def calculate_everything(path_to_folder, mode):
         write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
         for root,_,_ in os.walk(path_to_folder, topdown="false"):
             #if there are files
-            data=form_folder_to_arrays(root)
+            data=from_folder_to_arrays(root)
             if data:
                 RMS_images=calculate_RMS_images(data)
                 local_mean_RMS= np.mean(RMS_images)
@@ -138,7 +151,7 @@ def calculate_everything(path_to_folder, mode):
         write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_focus\n")
         for root,_,_ in os.walk(path_to_folder, topdown="false"):
         #if there are files
-            data=form_folder_to_arrays(root)
+            data=from_folder_to_arrays(root)
             if data:
                 #store into the dictionnary the data point
                 path_list=re.split("[\\\\,/]+",root)
@@ -182,7 +195,9 @@ def add_columns_to_masterlog(path):
             empty=["tiltx", "tilty", "focus", "filtered3"]
             non_empty=[]
             for in_scan in os.scandir(os.path.join(entry.path, "analysis")):
-                data=form_folder_to_arrays(in_scan.path)
+                data=from_folder_to_arrays(in_scan.path)
+                #zernike decompostion isn't influenced by the filters
+                zernike_data= from_folder_to_arrays_zernike(in_scan.path)
                 if in_scan.name=="tiltx":
                     if data:
                         scan_data.tiltx=calculate_RMS_images(data)
@@ -211,14 +226,14 @@ def add_columns_to_masterlog(path):
                 length=len(getattr(scan_data,non_empty[0]))
                 for _,attribute in enumerate(empty):
                     setattr(scan_data,attribute,["NaN"]*length)
-                write_scan_file(entry.name, scan_data, folder)
+                write_scan_file(entry.name, scan_data, zernike_data,folder)
 
 #create scan file in directory scan_files to add to masterlog
-def write_scan_file(scan_name, scan_data, dir_path):
+def write_scan_file(scan_name, scan_data, zernike_data,dir_path):
     scan_file=open(os.path.join(dir_path,scan_name+".txt"), "w")
-    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_higher_order\n")
+    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_Z0\tHASO_Z1\tHASOZ_2\tHASO_higher_order\n")
     for i,_ in enumerate(scan_data.filtered3):
-        scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+str(scan_data.filtered3[i])+"\n")
+        scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+zernike_data[i][0]+"\t"+zernike_data[i][1]+"\t"+zernike_data[i][2]+"\t"+str(scan_data.filtered3[i])+"\n")
     scan_file.close()
 
 def plotRMS():
