@@ -16,7 +16,8 @@ class Scan:
         self.filtered3= "NaN"
         self.tilt= "NaN"
         self.focus= "NaN"
-
+        self.tiltx= "NaN"
+        self.tilty= "NaN"
 def browse_button():
     global folder_path
     global button3
@@ -83,8 +84,13 @@ def calculate_RMS_pixel_by_pixel(data):
     return RMS_pixels
 
 def do_it_action(path_to_folder, mode):
-    thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode.get()))
-    thread1.start()
+    if mode.get()!=3: 
+        thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode.get()))
+        thread1.start()
+    #need to create masterlog like txt file
+    else:
+        thread1=thr.Thread(target=add_columns_to_masterlog, args=(path_to_folder,))
+        thread1.start()
 
 def calculate_everything(path_to_folder, mode):
     global RMS_map
@@ -93,8 +99,6 @@ def calculate_everything(path_to_folder, mode):
     global button4
     global RMS_pixels
     #single file
-    print(type(mode))
-    print(mode)
     if mode==0:
         data=form_folder_to_arrays(path_to_folder)
         RMS_images=calculate_RMS_images(data)
@@ -167,6 +171,56 @@ def calculate_everything(path_to_folder, mode):
     else : 
         print("Non recongnized analysis mode")
 #plot image map of RMS
+def add_columns_to_masterlog(path):
+    useless_names=["all","tilt","filtered2","filtered3"]
+    folder= os.path.join(path, "scan_files")
+    os.mkdir(folder)
+    for entry in os.scandir(path):
+        if entry.is_dir() and ("Scan" in entry.name):
+            scan_data=Scan()
+            #contains empty columns
+            empty=["tiltx", "tilty", "focus", "filtered3"]
+            non_empty=[]
+            for in_scan in os.scandir(os.path.join(entry.path, "analysis")):
+                data=form_folder_to_arrays(in_scan.path)
+                if in_scan.name=="tiltx":
+                    if data:
+                        scan_data.tiltx=calculate_RMS_images(data)
+                        empty.remove("tiltx")
+                        non_empty.append("tiltx")
+                elif in_scan.name=="tilty":
+                    if data:
+                        scan_data.tilty=calculate_RMS_images(data)
+                        empty.remove("tilty")
+                        non_empty.append("tilty")
+                elif in_scan.name=="focus":
+                    if data:
+                        scan_data.focus=calculate_RMS_images(data)
+                        empty.remove("focus")
+                        non_empty.append("focus")
+                elif in_scan.name=="filtered3":
+                    if data:
+                        scan_data.filtered3=calculate_RMS_images(data)
+                        empty.remove("filtered3")
+                        non_empty.append("filtered3")
+                elif in_scan.name in useless_names:
+                    continue
+                else : 
+                    print("Warning scan "+entry.name+ " misnammed folder!!!!")
+            if non_empty:
+                length=len(getattr(scan_data,non_empty[0]))
+                for _,attribute in enumerate(empty):
+                    setattr(scan_data,attribute,["NaN"]*length)
+                write_scan_file(entry.name, scan_data, folder)
+
+#create scan file in directory scan_files to add to masterlog
+def write_scan_file(scan_name, scan_data, dir_path):
+    scan_file=open(os.path.join(dir_path,scan_name+".txt"), "w")
+    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_higher_order\n")
+    for i,_ in enumerate(scan_data.filtered3):
+        scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+str(scan_data.filtered3[i])+"\n")
+    scan_file.close()
+
 def plotRMS():
     global RMS_map
     fig, ax = plt.subplots()
@@ -228,7 +282,7 @@ lbl1.pack(side=LEFT)
 #Packing in left frame
 listbox_lbl=Label(left_frame, text="Select analysis mode")
 listbox_lbl.pack(fill=X, pady=(50,0))
-modes_of_analyzing = ["Single folder", "Browse recursively", "Browse recursively respecting the scan file arborescence", "Make, file for masterlog"]
+modes_of_analyzing = ["Single folder", "Browse recursively", "Browse recursively respecting the scan file arborescence", "Make file for masterlog"]
 for val, modes in enumerate(modes_of_analyzing):
     Radiobutton(left_frame, text=modes, variable=analyzing_mode, value=val, indicatoron=0).pack(fill=X)
 
