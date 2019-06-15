@@ -179,7 +179,6 @@ def calculate_everything(path_to_folder, mode):
         #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
         for number, scan in data_dict.items():
             write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
-                
         write_file.close()
     else : 
         print("Non recongnized analysis mode")
@@ -230,8 +229,8 @@ def add_columns_to_masterlog(path):
 
 #create scan file in directory scan_files to add to masterlog
 def write_scan_file(scan_name, scan_data, zernike_data,dir_path):
-    scan_file=open(os.path.join(dir_path,scan_name+".txt"), "w")
-    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_Z0\tHASO_Z1\tHASOZ_2\tHASO_higher_order\n")
+    scan_file=open(os.path.join(dir_path,scan_name+"_HASO"+".txt"), "w")
+    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_Z0\tHASO_Z1\tHASO_Z2\tHASO_higher_order\n")
     for i,_ in enumerate(scan_data.filtered3):
         scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+zernike_data[i][0]+"\t"+zernike_data[i][1]+"\t"+zernike_data[i][2]+"\t"+str(scan_data.filtered3[i])+"\n")
     scan_file.close()
