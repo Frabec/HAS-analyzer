@@ -197,39 +197,46 @@ def add_columns_to_masterlog(path):
             #contains empty columns
             empty=["tiltx", "tilty", "focus", "filtered3"]
             non_empty=[]
-            for in_scan in os.scandir(os.path.join(entry.path, "analysis")):
-                data=from_folder_to_arrays(in_scan.path)
-                #zernike decompostion isn't influenced by the filters
-                zernike_data= from_folder_to_arrays_zernike(in_scan.path)
-                if in_scan.name=="tiltx":
-                    if data:
-                        scan_data.tiltx=calculate_RMS_images(data)
-                        empty.remove("tiltx")
-                        non_empty.append("tiltx")
-                elif in_scan.name=="tilty":
-                    if data:
-                        scan_data.tilty=calculate_RMS_images(data)
-                        empty.remove("tilty")
-                        non_empty.append("tilty")
-                elif in_scan.name=="focus":
-                    if data:
-                        scan_data.focus=calculate_RMS_images(data)
-                        empty.remove("focus")
-                        non_empty.append("focus")
-                elif in_scan.name=="filtered3":
-                    if data:
-                        scan_data.filtered3=calculate_RMS_images(data)
-                        empty.remove("filtered3")
-                        non_empty.append("filtered3")
-                elif in_scan.name in useless_names:
-                    continue
-                else : 
-                    print("Warning scan "+entry.name+ " misnammed folder!!!!")
-            if non_empty:
-                length=len(getattr(scan_data,non_empty[0]))
-                for _,attribute in enumerate(empty):
-                    setattr(scan_data,attribute,["NaN"]*length)
-                write_scan_file(entry.name, scan_data, zernike_data,folder)
+            analysis_path=os.path.join(entry.path, "HAS", "analysis")
+            #If we have a HAS\analysis folder inside the scan folder"
+            if os.path.exists(analysis_path):
+                for in_scan in os.scandir(analysis_path):
+                    #We send to from_folder_to_arrays only a folder not a file
+                    if not os.path.isfile(in_scan):
+                        data=from_folder_to_arrays(in_scan.path)
+                    else :
+                        data=[]
+                    #zernike decompostion isn't influenced by the filters
+                    zernike_data= from_folder_to_arrays_zernike(in_scan.path)
+                    if in_scan.name=="tiltx":
+                        if data:
+                            scan_data.tiltx=calculate_RMS_images(data)
+                            empty.remove("tiltx")
+                            non_empty.append("tiltx")
+                    elif in_scan.name=="tilty":
+                        if data:
+                            scan_data.tilty=calculate_RMS_images(data)
+                            empty.remove("tilty")
+                            non_empty.append("tilty")
+                    elif in_scan.name=="focus":
+                        if data:
+                            scan_data.focus=calculate_RMS_images(data)
+                            empty.remove("focus")
+                            non_empty.append("focus")
+                    elif in_scan.name=="filtered3":
+                        if data:
+                            scan_data.filtered3=calculate_RMS_images(data)
+                            empty.remove("filtered3")
+                            non_empty.append("filtered3")
+                    elif in_scan.name in useless_names:
+                        continue
+                    else : 
+                        print("Warning scan "+entry.name+ " misnammed folder!!!!")
+                if non_empty:
+                    length=len(getattr(scan_data,non_empty[0]))
+                    for _,attribute in enumerate(empty):
+                        setattr(scan_data,attribute,["NaN"]*length)
+                    write_scan_file(entry.name, scan_data, zernike_data,folder)
 
 #create scan file in directory scan_files to add to masterlog
 def write_scan_file(scan_name, scan_data, zernike_data,dir_path):
