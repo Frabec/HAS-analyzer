@@ -148,7 +148,7 @@ def calculate_everything(path_to_folder, mode):
          #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
         data_dict={}
         write_file= open(path_to_folder+"/data_formated.txt","w")
-        write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_focus\n")
+        write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_tiltx\tRMS_of_RMS_tilty\tRMS_of_RMS_focus\n")
         for root,_,_ in os.walk(path_to_folder, topdown="false"):
         #if there are files
             data=from_folder_to_arrays(root)
@@ -171,14 +171,18 @@ def calculate_everything(path_to_folder, mode):
                     data_dict[scan_number].tilt=local_RMS_RMS
                 elif path_list[-1]=="focus":
                     data_dict[scan_number].focus=local_RMS_RMS
+                elif path_list[-1]=="tiltx":
+                    data_dict[scan_number].tiltx=local_RMS_RMS
+                elif path_list[-1]=="tilty":
+                    data_dict[scan_number].tilty=local_RMS_RMS
                 else:
-                    print("Warning scan "+scan_number+ " misnammed folder!!!!")
+                    print("Warning scan "+scan_number+ " misnammed folder!!!! : "+path_list[-1])
 
         #Now write everything into the text file
         #Format : 
         #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
         for number, scan in data_dict.items():
-            write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.focus+"\n")
+            write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.tiltx+"\t"+scan.tilty+"\t"+scan.focus+"\n")
         write_file.close()
     else : 
         print("Non recongnized analysis mode")
