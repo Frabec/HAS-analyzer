@@ -149,19 +149,18 @@ def calculate_everything(path_to_folder, mode):
         data_dict={}
         for entry in os.scandir(path_to_folder):
             if entry.is_dir() and ("Scan" in entry.name):
-                analysis_path=os.path.join(path_to_folder, "HAS", "analyis")
+                analysis_path=os.path.join(entry.path, "HAS", "analysis")
                 #we make sure we have an HAS\analysis folder
                 if not os.path.exists(analysis_path):
                     continue
                 for in_scan in os.scandir(analysis_path):
                     #We only send folders to from_folders_to_array
-                    if not os.path.isdir(in_scan):
+                    if not os.path.isdir(in_scan.path):
                         continue
                     data=from_folder_to_arrays(in_scan)
                     if data :
                         #store into the dictionnary the data point
-                        entry=re.split("[\\\\,/]+",root)
-                        m=re.search("[0-9]+", in_scan.name)
+                        m=re.search("[0-9]+", entry.name)
                         scan_number=m.group(0)
                         RMS_images=calculate_RMS_images(data)
                         local_RMS_RMS=str(np.std(RMS_images))
