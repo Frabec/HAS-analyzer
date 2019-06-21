@@ -157,7 +157,7 @@ def calculate_everything(path_to_folder, mode):
                     #We only send folders to from_folders_to_array
                     if not os.path.isdir(in_scan.path):
                         continue
-                    data=from_folder_to_arrays(in_scan)
+                    data=from_folder_to_arrays(in_scan.path)
                     if data :
                         #store into the dictionnary the data point
                         m=re.search("[0-9]+", entry.name)
@@ -210,10 +210,11 @@ def add_columns_to_masterlog(path):
                     #We send to from_folder_to_arrays only a folder not a file
                     if os.path.isdir(in_scan):
                         data=from_folder_to_arrays(in_scan.path)
+                        #zernike decompostion isn't influenced by the filters
+                        zernike_data= from_folder_to_arrays_zernike(in_scan.path)
                     else :
-                        data=[]
-                    #zernike decompostion isn't influenced by the filters
-                    zernike_data= from_folder_to_arrays_zernike(in_scan.path)
+                        continue
+                    
                     if in_scan.name=="tiltx":
                         if data:
                             scan_data.tiltx=calculate_RMS_images(data)
