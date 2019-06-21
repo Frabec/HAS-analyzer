@@ -147,40 +147,47 @@ def calculate_everything(path_to_folder, mode):
     elif mode==2: 
          #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
         data_dict={}
-        write_file= open(path_to_folder+"/data_formated.txt","w")
-        write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_tiltx\tRMS_of_RMS_tilty\tRMS_of_RMS_focus\n")
-        for root,_,_ in os.walk(path_to_folder, topdown="false"):
-        #if there are files
-            data=from_folder_to_arrays(root)
-            if data:
-                #store into the dictionnary the data point
-                path_list=re.split("[\\\\,/]+",root)
-                m=re.search("[0-9]+", path_list[-3])
-                scan_number=m.group(0)
-                RMS_images=calculate_RMS_images(data)
-                local_RMS_RMS=str(np.std(RMS_images))
-                if scan_number not in data_dict:
-                    data_dict[scan_number]=Scan()
-                if path_list[-1]=="all":
-                    data_dict[scan_number].all=local_RMS_RMS
-                elif path_list[-1]=="filtered2":
-                    data_dict[scan_number].filtered2=local_RMS_RMS
-                elif path_list[-1]=="filtered3":
-                    data_dict[scan_number].filtered3=local_RMS_RMS
-                elif path_list[-1]=="tilt":
-                    data_dict[scan_number].tilt=local_RMS_RMS
-                elif path_list[-1]=="focus":
-                    data_dict[scan_number].focus=local_RMS_RMS
-                elif path_list[-1]=="tiltx":
-                    data_dict[scan_number].tiltx=local_RMS_RMS
-                elif path_list[-1]=="tilty":
-                    data_dict[scan_number].tilty=local_RMS_RMS
-                else:
-                    print("Warning scan "+scan_number+ " misnammed folder!!!! : "+path_list[-1])
-
+        for entry in os.scandir(path_to_folder):
+            if entry.is_dir() and ("Scan" in entry.name):
+                analysis_path=os.path.join(path_to_folder, "HAS", "analyis")
+                #we make sure we have an HAS\analysis folder
+                if not os.path.exists(analysis_path):
+                    continue
+                for in_scan in os.scandir(analysis_path):
+                    #We only send folders to from_folders_to_array
+                    if not os.path.isdir(in_scan):
+                        continue
+                    data=from_folder_to_arrays(in_scan)
+                    if data :
+                        #store into the dictionnary the data point
+                        entry=re.split("[\\\\,/]+",root)
+                        m=re.search("[0-9]+", in_scan.name)
+                        scan_number=m.group(0)
+                        RMS_images=calculate_RMS_images(data)
+                        local_RMS_RMS=str(np.std(RMS_images))
+                        if scan_number not in data_dict:
+                            data_dict[scan_number]=Scan()
+                        if in_scan.name=="all":
+                            data_dict[scan_number].all=local_RMS_RMS
+                        elif in_scan.name=="filtered2":
+                            data_dict[scan_number].filtered2=local_RMS_RMS
+                        elif in_scan.name=="filtered3":
+                            data_dict[scan_number].filtered3=local_RMS_RMS
+                        elif in_scan.name=="tilt":
+                            data_dict[scan_number].tilt=local_RMS_RMS
+                        elif in_scan.name=="focus":
+                            data_dict[scan_number].focus=local_RMS_RMS
+                        elif in_scan.name=="tiltx":
+                            data_dict[scan_number].tiltx=local_RMS_RMS
+                        elif in_scan.name=="tilty":
+                            data_dict[scan_number].tilty=local_RMS_RMS
+                        else:
+                            print("Warning scan "+scan_number+ " misnammed folder!!!! : "+ in_scan.name)
         #Now write everything into the text file
         #Format : 
         #Scan number    RMS_of_RMS_all  RMS_of_RMS_all-tilt,tip RMS_of_RMS_all-tilt,tip,focus   RMS_of_RMS_tilt,tip    RMS_of_RMS_focus
+        write_file= open(path_to_folder+"/data_formated.txt","w")
+        write_file.write("Format of data: Scan number\tRMS_of_RMS_all\tRMS_of_RMS_all-tilt,tip\tRMS_of_RMS_all-tilt,tip,focus\tRMS_of_RMS_tilt,tip\tRMS_of_RMS_tiltx\tRMS_of_RMS_tilty\tRMS_of_RMS_focus\n")
         for number, scan in data_dict.items():
             write_file.write(number+"\t"+scan.all+"\t"+scan.filtered2+"\t"+scan.filtered3+"\t"+scan.tilt+"\t"+scan.tiltx+"\t"+scan.tilty+"\t"+scan.focus+"\n")
         write_file.close()
@@ -202,7 +209,7 @@ def add_columns_to_masterlog(path):
             if os.path.exists(analysis_path):
                 for in_scan in os.scandir(analysis_path):
                     #We send to from_folder_to_arrays only a folder not a file
-                    if not os.path.isfile(in_scan):
+                    if os.path.isdir(in_scan):
                         data=from_folder_to_arrays(in_scan.path)
                     else :
                         data=[]
