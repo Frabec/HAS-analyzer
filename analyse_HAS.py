@@ -195,7 +195,7 @@ def calculate_everything(path_to_folder, mode):
 #plot image map of RMS
 def add_columns_to_masterlog(path):
     useless_names=["all","tilt","filtered2","filtered3"]
-    folder= os.path.join(path, "scan_files")
+    folder= os.path.join(path, "HASO_scan_files")
     os.mkdir(folder)
     for entry in os.scandir(path):
         if entry.is_dir() and ("Scan" in entry.name):
@@ -248,7 +248,7 @@ def add_columns_to_masterlog(path):
 #create scan file in directory scan_files to add to masterlog
 def write_scan_file(scan_name, scan_data, zernike_data,dir_path):
     scan_file=open(os.path.join(dir_path,scan_name+"_HASO"+".txt"), "w")
-    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_Z0\tHASO_Z1\tHASO_Z2\tHASO_higher_order\n")
+    scan_file.write("HASO_tiltx\tHASO_tilty\tHASO_focus\tHASO_Z1\tHASO_Z2\tHASO_Z3\tHASO_higher_order\n")
     for i,_ in enumerate(scan_data.filtered3):
         scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+zernike_data[i][0]+"\t"+zernike_data[i][1]+"\t"+zernike_data[i][2]+"\t"+str(scan_data.filtered3[i])+"\n")
     scan_file.close()
@@ -271,7 +271,7 @@ def plotRMS():
 ############################################################################################################
 #Start
 root = Tk()
-root.title("HAS Analyzer")
+root.title("Wavefront analyzer")
 root.geometry("{}x{}".format(900,350))
 #######################################
 ###           Global vars           ###
