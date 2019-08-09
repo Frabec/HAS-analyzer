@@ -1,3 +1,10 @@
+# __    __                 __                  _                       _                    
+#/ / /\ \ \__ ___   _____ / _| ___  _ __ _ __ | |_    __ _ _ __   __ _| |_   _ _______ _ __ 
+#\ \/  \/ / _` \ \ / / _ \ |_ / _ \| '__| '_ \| __|  / _` | '_ \ / _` | | | | |_  / _ \ '__|
+# \  /\  / (_| |\ V /  __/  _| (_) | |  | | | | |_  | (_| | | | | (_| | | |_| |/ /  __/ |   
+#  \/  \/ \__,_| \_/ \___|_|  \___/|_|  |_| |_|\__|  \__,_|_| |_|\__,_|_|\__, /___\___|_|   
+#                                                                        |___/              
+
 from tkinter import *
 from tkinter import filedialog
 import os as os
@@ -9,6 +16,7 @@ import re
 from matplotlib import rcParams
 import threading as thr
 
+#The class Scan is used to store the different informations about a scan
 class Scan: 
     def __init__(self):
         self.all= "NaN"
@@ -18,6 +26,8 @@ class Scan:
         self.focus= "NaN"
         self.tiltx= "NaN"
         self.tilty= "NaN"
+
+#This function is caled when the browse button is clicked, it allow the user to browse through folders
 def browse_button():
     global folder_path
     global button3
@@ -29,7 +39,8 @@ def browse_button():
     else: 
         button3.config(state="disabled")
         button4.config(state="disabled")
-#get in a folder open all the wavefront (.wft) files and stores them in an array, using a double array format
+
+#This function gets in a folder, open all the wavefront (.wft) files and stores them in an array, using a double array format
 def from_folder_to_arrays(path):
     data_storage= []
     for file_names in os.listdir(path):
@@ -41,7 +52,7 @@ def from_folder_to_arrays(path):
         for lines in f:
             raw=(lines.split('\t'))
             #replace NaN by 0 and convert to float
-            #*1000 to have values in nm
+            #*1000 to have values in nm (they are by default in microns)
             modified=list(map(lambda x: 1000*float(x) if not("NaN" in x) else 0., raw))
             #if list is not empty
             new_image.append(modified)
@@ -52,7 +63,7 @@ def from_folder_to_arrays(path):
         
     return data_storage
 
-#get in a folder open all the zernike files (.zrn) and stores the first 3 coeffs of each shot, using a double array format
+#This function gets in a folder open all the zernike files (.zrn) and stores the first 3 coeffs of each shot, using a double array format
 def from_folder_to_arrays_zernike(path):
     storage=[]
     for file_name in os.listdir(path): 
@@ -65,14 +76,16 @@ def from_folder_to_arrays_zernike(path):
         f.close()
     return storage
 
+#This function calculates the RMS of each image
 def calculate_RMS_images(data): 
     RMS_images=[None]*len(data)
     for i,image in enumerate(data):
-        #We delete the 0 because they were NaN
+        #We delete the 0s because they were NaN in the wft file
         filtered_image=[list(filter(lambda x: x!=0., row)) for row in image]
         RMS_images[i]=np.std([pixel for row in filtered_image for pixel in row])
     return RMS_images
 
+#This function calculate for each pixel the rms over the series of images
 def calculate_RMS_pixel_by_pixel(data):
     RMS_pixels=[]
     global RMS_map
@@ -96,22 +109,28 @@ def calculate_RMS_pixel_by_pixel(data):
         RMS_map.append(row_for_map)
     return RMS_pixels
 
+#This function is called when the "Do it" button is clicked, path_to_folder contains the path, moode is the action selected by the user.
 def do_it_action(path_to_folder, mode):
+    #We start a different thread to do the calculation, the GUI runs on a thread and the statistics of the wavefront are calculated in another thread
+    
+    #if the users has not chosen "make file for masterlog option"
     if mode.get()!=3: 
         thread1= thr.Thread(target=calculate_everything, args=(path_to_folder, mode.get()))
         thread1.start()
+
     #need to create masterlog like txt file
     else:
         thread1=thr.Thread(target=add_columns_to_masterlog, args=(path_to_folder,))
         thread1.start()
 
+#This function will calculate the statistics over several .wft images
 def calculate_everything(path_to_folder, mode):
     global RMS_map
     global mean_RMS
     global RMS_RMS
     global button4
     global RMS_pixels
-    #single file
+    #If the user selected to analyze a single folder
     if mode==0:
         data=from_folder_to_arrays(path_to_folder)
         RMS_images=calculate_RMS_images(data)
@@ -121,19 +140,27 @@ def calculate_everything(path_to_folder, mode):
         button4.config(state="normal")
         RMS_pixels.set(np.mean([pixel for row in RMS_pixel_by_pixel for pixel in row]))
         return
-    #browse without structure
-    #There is no mean wavefront to plot
+
+    #If the program is here it means the user wants to analyze several folders
+    #There is no plot, the plot feature is only available for single folder analysis, so we disable the button
     button4.config(state="disabled")
-    #Don't show any data it is only for single files
+
+
+    #If we analyze several folders we don't show the statistics on the GUI but record them in a .txt file
     mean_RMS.set(None)
     RMS_RMS.set(None)
     RMS_pixels.set(None)
+
+    #Here we browse recursively through the subfolders of "path_to_folder", for all the folders we find that contains .wft files we calculate the statistics 
     if mode==1:
+        #The statistics are recorded in the file called "data.txt"
         write_file= open(path_to_folder+"/data.txt","w")
         write_file.write("Format of data:\nPath\nMean of RMS\tRMS of RMS\tRMS pixel by pixel\n")
+        #We explore the folder arborescence
         for root,_,_ in os.walk(path_to_folder, topdown="false"):
             #if there are files
             data=from_folder_to_arrays(root)
+            #If the folder contains .wft files
             if data:
                 RMS_images=calculate_RMS_images(data)
                 local_mean_RMS= np.mean(RMS_images)
@@ -143,9 +170,9 @@ def calculate_everything(path_to_folder, mode):
                 write_file.write(root[len(path_to_folder):]+"\n")
                 write_file.write(str(local_mean_RMS)+"\t"+str(local_RMS_RMS)+"\t"+str(local_RMS_pixels)+"\n")
         write_file.close()
-    #Browse with order
+    #The user has selected to browse the folder respecting the file arborescence explained in the README.MD
     elif mode==2: 
-         #dictionnnary Key= scan number, value Scan class associated to scan number 'Key'
+         #We store the scans data in a dictionnary, dictionnnary Key= scan number, value = Scan class instance containing the data of the scan 'Key'
         data_dict={}
         for entry in os.scandir(path_to_folder):
             if entry.is_dir() and ("Scan" in entry.name):
@@ -154,7 +181,7 @@ def calculate_everything(path_to_folder, mode):
                 if not os.path.exists(analysis_path):
                     continue
                 for in_scan in os.scandir(analysis_path):
-                    #We only send folders to from_folders_to_array
+                    #We make sure it is a folder before calling from_folders_to_array
                     if not os.path.isdir(in_scan.path):
                         continue
                     data=from_folder_to_arrays(in_scan.path)
@@ -192,17 +219,24 @@ def calculate_everything(path_to_folder, mode):
         write_file.close()
     else : 
         print("Non recongnized analysis mode")
-#plot image map of RMS
+
+#This functions works if the file arborescence explained in the README.MD is respected. For each scan it will create a .txt file containing the RMS of each shot fo that scan. This file can be later added to the masterlog 
+#file for GEECS plotter. The feature "Browse recursively respecting the scan file arborescence" because it will do statistics over all the shots of the scan (RMS of RMS). This function records the statistics for each shot
+#(RMS for instance)
 def add_columns_to_masterlog(path):
-    useless_names=["all","tilt","filtered2","filtered3"]
+    #Relevant data names that we don't store in this function
+    useless_names=["all","tilt","filtered2"]
+    #The txt files will be stored in folder "HASO_scan_files"
     folder= os.path.join(path, "HASO_scan_files")
     os.mkdir(folder)
     for entry in os.scandir(path):
         if entry.is_dir() and ("Scan" in entry.name):
             scan_data=Scan()
-            #contains empty columns
+            #contains the potential empty columns
             empty=["tiltx", "tilty", "focus", "filtered3"]
+            #List of features contained in the folder
             non_empty=[]
+            #Path to folder containing .wft folders
             analysis_path=os.path.join(entry.path, "HAS", "analysis")
             #If we have a HAS\analysis folder inside the scan folder"
             if os.path.exists(analysis_path):
@@ -235,10 +269,13 @@ def add_columns_to_masterlog(path):
                             scan_data.filtered3=calculate_RMS_images(data)
                             empty.remove("filtered3")
                             non_empty.append("filtered3")
+                    #if the folder selected has a relevant name but we don't want to record its data
                     elif in_scan.name in useless_names:
                         continue
+                    #it means that a folder in analysis folder has not been named correctly, READMEE.MD explains how to name folders
                     else : 
                         print("Warning scan "+entry.name+ " misnammed folder!!!!")
+                #If we recorded at least one feature
                 if non_empty:
                     length=len(getattr(scan_data,non_empty[0]))
                     for _,attribute in enumerate(empty):
@@ -253,6 +290,7 @@ def write_scan_file(scan_name, scan_data, zernike_data,dir_path):
         scan_file.write(str(scan_data.tiltx[i])+"\t"+str(scan_data.tilty[i])+"\t"+str(scan_data.focus[i])+"\t"+zernike_data[i][0]+"\t"+zernike_data[i][1]+"\t"+zernike_data[i][2]+"\t"+str(scan_data.filtered3[i])+"\n")
     scan_file.close()
 
+#This function plots a map of RMS pixel by pixel
 def plotRMS():
     global RMS_map
     fig, ax = plt.subplots()
